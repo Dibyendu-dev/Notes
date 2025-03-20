@@ -1,85 +1,90 @@
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, Modal } from "react-native";
-import { useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  TextInput,
+  Modal,
+  Alert,
+} from "react-native";
+import { useState, useEffect } from "react";
 import { NoteList } from "@/components/NoteList";
+import AddNoteModal from "@/components/AddNoteModal";
+import noteService from "@/services/noteService";
 
 const Index = () => {
   const [modalVisible, setModalVisible] = useState(false);
-  const [newNote, setNewNote] = useState('');
-  const [notes, setNotes] = useState([
-    {
-      id: "bd7acbea-c1b1-46c2-aed5-3ad53abb28ba",
-      title: "First Item",
-    },
-    {
-      id: "3ac68afc-c605-48d3-a4f8-fbd91aa97f63",
-      title: "Second Item",
-    },
-    {
-      id: "58694a0f-3da1-471f-bd96-145571e29d72",
-      title: "Third Item",
-    }
-  ]);
+  const [newNote, setNewNote] = useState("");
+  const [notes, setNotes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const addNote = () => {
-    if (newNote.trim() === '') return;
-    
-    const newNoteItem = {
-      id: Date.now().toString(),
-      title: newNote
-    };
-    
-    setNotes([...notes, newNoteItem]);
-    setNewNote('');
-    setModalVisible(false);
+  useEffect(() => {
+    fetchNotes();
+  }, []);
+
+  const fetchNotes = async () => {
+    setLoading(true);
+    const response = await noteService.getNotes();
+    if (response.error) {
+      setError(response.error);
+      Alert.alert("Error", response.error);
+    } else {
+      setNotes(response.data);
+      setError(null);
+    }
+    setLoading(false);
+  };
+
+  const addNote = async () => {
+    if (newNote.trim() === "") return;
+
+    try {
+      const newNoteItem = {
+        title: newNote,
+        content: newNote,
+      };
+
+      const response = await noteService.createNote(newNoteItem);
+      if (response.error) {
+        Alert.alert("Error", response.error);
+        return;
+      }
+
+      setNotes([...notes, response.data]);
+      setNewNote("");
+      setModalVisible(false);
+    } catch (error) {
+      Alert.alert("Error", "Failed to create note");
+    }
   };
 
   return (
     <View style={styles.container}>
-      <Text>Notes</Text>
+      <Text style={styles.title}>Notes</Text>
       <View style={styles.listContainer}>
-        <NoteList notes={notes} />
-        <TouchableOpacity style={styles.addButton} onPress={() => setModalVisible(true)}>
+        {loading ? (
+          <Text style={styles.loadingText}>Loading...</Text>
+        ) : notes.length === 0 ? (
+          <Text style={styles.noNotesText}>You have no notes</Text>
+        ) : (
+          <NoteList notes={notes} />
+        )}
+        <TouchableOpacity
+          style={styles.addButton}
+          onPress={() => setModalVisible(true)}
+        >
           <Text style={styles.addButtonText}>Add Note</Text>
         </TouchableOpacity>
-        
-        {/* modal */}
-        <Modal
-          visible={modalVisible}
-          animationType="slide"
-          transparent
-          onRequestClose={() => setModalVisible(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Add a New Note</Text>
-              <TextInput 
-                style={styles.input}
-                placeholder="Enter note..."
-                placeholderTextColor='#aaa'
-                value={newNote}
-                onChangeText={setNewNote}
-              />
-              <View style={styles.modalButtons}>
-                <TouchableOpacity 
-                  style={styles.cancelButton} 
-                  onPress={() => {
-                    setNewNote('');
-                    setModalVisible(false);
-                  }}
-                >
-                  <Text style={styles.cancelButtonText}>Cancel</Text>
-                </TouchableOpacity>
 
-                <TouchableOpacity 
-                  style={styles.saveButton} 
-                  onPress={addNote}
-                >
-                  <Text style={styles.saveButtonText}>Save</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </Modal>
+        <AddNoteModal
+          modalVisible={modalVisible}
+          setModalVisible={setModalVisible}
+          newNote={newNote}
+          setNewNote={setNewNote}
+          addNote={addNote}
+        />
       </View>
     </View>
   );
@@ -91,77 +96,40 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: "#fff",
   },
+  title: {
+    fontSize: 24,
+    fontWeight: "bold",
+    marginBottom: 20,
+  },
   listContainer: {
     flex: 1,
   },
- 
+  loadingText: {
+    textAlign: "center",
+    fontSize: 16,
+    color: "#666",
+    marginTop: 20,
+  },
+  noNotesText: {
+    textAlign: "center",
+    fontSize: 16,
+    color: "#666",
+    marginTop: 20,
+  },
   addButton: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 20,
     left: 20,
     right: 20,
-    backgroundColor: '#007bff',
+    backgroundColor: "#007bff",
     padding: 15,
     borderRadius: 8,
-    alignItems: 'center',
+    alignItems: "center",
   },
   addButtonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 18,
-    fontWeight: 'bold',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    backgroundColor: '#fff',
-    padding: 20,
-    borderRadius: 10,
-    width: '80%',
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    textAlign: 'center',
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    padding: 10,
-    fontSize: 16,
-    marginBottom: 15,
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  cancelButton: {
-    backgroundColor: '#ccc',
-    padding: 10,
-    borderRadius: 5,
-    flex: 1,
-    marginRight: 10,
-    alignItems: 'center',
-  },
-  cancelButtonText: {
-    fontSize: 16,
-    color: '#333',
-  },
-  saveButton: {
-    backgroundColor: '#007bff',
-    padding: 10,
-    borderRadius: 5,
-    flex: 1,
-    alignItems: 'center',
-  },
-  saveButtonText: {
-    fontSize: 16,
-    color: '#fff',
+    fontWeight: "bold",
   },
 });
 

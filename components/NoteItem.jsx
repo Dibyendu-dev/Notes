@@ -5,13 +5,13 @@ export const NoteItem = ({note}) => {
   return (
     <View style={styles.noteItem}>
     <Text style={styles.noteText}>
-      {note.title}
+      {note.text}
     </Text>
   </View>
   )
 }
 
-const style = StyleSheet.create({
+const styles = StyleSheet.create({
     noteItem: {
         flexDirection: 'row',
         justifyContent: 'space-between',

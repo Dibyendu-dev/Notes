@@ -5,10 +5,12 @@ export const NoteList = ({notes}) => {
   return (
     <View>
         <FlatList
-          data={notes}
-          renderItem={({ item }) => <NoteItem note={item} />}
-          keyExtractor={(item) => item.id}
-        />
+        data={notes}
+        keyExtractor={(item) => item.$id}
+        renderItem={({ item }) => (
+          <NoteItem note={item}  />
+        )}
+      />
     </View>
   )
 }
