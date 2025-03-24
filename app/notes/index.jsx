@@ -7,6 +7,7 @@ import {
   TextInput,
   Modal,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { useState, useEffect } from "react";
 import { NoteList } from "@/components/NoteList";
@@ -40,24 +41,36 @@ const Index = () => {
   const addNote = async () => {
     if (newNote.trim() === "") return;
 
-    try {
-      const newNoteItem = {
-        title: newNote,
-        content: newNote,
-      };
-
-      const response = await noteService.createNote(newNoteItem);
-      if (response.error) {
-        Alert.alert("Error", response.error);
-        return;
-      }
-
+    const response = await noteService.addNote(newNote);
+    if (response.error) {
+      Alert.alert("Error", response.error);
+    } else {
       setNotes([...notes, response.data]);
-      setNewNote("");
-      setModalVisible(false);
-    } catch (error) {
-      Alert.alert("Error", "Failed to create note");
     }
+
+    setNewNote("");
+    setModalVisible(false);
+  };
+
+  const deleteNote = async (id) => {
+    Alert.alert("Delete Note", "Are you sure you want to delete this note?", [
+      {
+        text: "Cancel",
+        style: "cancel",
+      },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          const response = await noteService.deleteNote(id);
+          if (response.error) {
+            Alert.alert("Error", response.error);
+          } else {
+            setNotes(notes.filter((note) => note.$id !== id));
+          }
+        },
+      },
+    ]);
   };
 
   return (
@@ -65,11 +78,17 @@ const Index = () => {
       <Text style={styles.title}>Notes</Text>
       <View style={styles.listContainer}>
         {loading ? (
-          <Text style={styles.loadingText}>Loading...</Text>
-        ) : notes.length === 0 ? (
-          <Text style={styles.noNotesText}>You have no notes</Text>
+          <ActivityIndicator size="large" color="#007bff" />
         ) : (
-          <NoteList notes={notes} />
+          <>
+            {error && <Text style={styles.errorText}>{error}</Text>}
+
+            {notes.length === 0 ? (
+              <Text style={styles.noNotesText}>You have no notes</Text>
+            ) : (
+              <NoteList notes={notes} onDelete={deleteNote} />
+            )}
+          </>
         )}
         <TouchableOpacity
           style={styles.addButton}
@@ -130,6 +149,19 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 18,
     fontWeight: "bold",
+  },
+  errorText: {
+    color: "red",
+    textAlign: "center",
+    marginBottom: 10,
+    fontSize: 16,
+  },
+  noNotesText: {
+    textAlign: "center",
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#555",
+    marginTop: 15,
   },
 });
 

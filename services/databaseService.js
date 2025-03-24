@@ -12,15 +12,26 @@ const databaseServices = {
     }
   },
 
-  async createDocument(dbId, colId, docId, data) {
+  async createDocument(dbId, colId, data,id=null,) {
     try {
-      const response = await database.createDocument(dbId, colId, docId, data);
+      const response = await database.createDocument(dbId, colId, id || undefined, data);
       return response;
     } catch (error) {
       console.error("Error creating document:", error.message);
       return { error: error.message };
     }
   },
+
+  async deleteDocument(dbId,colId,id){
+    try {
+      await database.deleteDocument(dbId,colId,id);
+      return{ success:true} 
+      
+    } catch (error) {
+      console.error("Error deleting document:", error.message);
+      return { error: error.message };
+    }
+  }
 };
 
 export default databaseServices;

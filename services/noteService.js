@@ -14,20 +14,39 @@ const noteService = {
     return { data: response };
   },
 
-  async createNote(note) {
+  async addNote(text) {
+    if(!text){
+      return { error: 'Note text connot be empty'}
+    }
+    const data ={
+      text:text
+    }
     try {
       const response = await databaseServices.createDocument(
         dbId,
         colId,
+        data,
         ID.unique(),
-        note
+        
       );
+      if(response?.error){
+        return {error:response.error}
+      }
       return { data: response };
     } catch (error) {
       console.error("Error creating note:", error);
       return { error: error.message };
     }
   },
+
+  async deleteNote(id){
+    const response = await databaseServices.deleteDocument(dbId,colId,id);
+    if (response.error) {
+      return { error: response.error };
+    }
+    return {success: true}
+  }
+
 };
 
 export default noteService;
