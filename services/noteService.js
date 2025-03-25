@@ -45,6 +45,14 @@ const noteService = {
       return { error: response.error };
     }
     return {success: true}
+  },
+
+  async updateNote(id,text){
+    const response = await databaseServices.updateDocument(dbId,colId,id,{text});
+    if (response.error) {
+      return { error: response.error };
+    }
+    return { data: response };
   }
 
 };
